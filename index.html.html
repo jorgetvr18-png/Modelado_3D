@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kiss Land AR</title>
+<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+<style>
+  body { margin: 0; overflow: hidden; font-family: system-ui, sans-serif; }
+  #ui { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+        background: linear-gradient(transparent, rgba(20,0,20,.85)); display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  #ui button { background: #1a0010; color: #ff2a55; border: 1px solid #ff2a55; border-radius: 8px; padding: 10px 12px;
+        font-size: 15px; box-shadow: 0 0 8px #ff2a55aa; }
+  #ui button:active { background: #ff2a55; color: #fff; }
+  #status { position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 10;
+        color: #fff; background: rgba(120,0,40,.75); padding: 6px 14px; border-radius: 20px; font-size: 14px; text-align: center; }
+</style>
+</head>
+<body>
+<div id="status">Apunta la cámara al marcador HIRO 📷</div>
+
+<a-scene embedded vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true; alpha: true"
+         arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+
+  <a-marker id="marker" preset="hiro">
+
+
+    <a-circle position="0 0.005 0" rotation="-90 0 0" radius="0.95" color="#14001f" opacity="0.85"></a-circle>
+    <a-ring position="0 0.01 0" rotation="-90 0 0" radius-inner="0.88" radius-outer="0.95"
+            material="color: #ff2a55; shader: flat"></a-ring>
+    <a-ring position="0 0.011 0" rotation="-90 0 0" radius-inner="0.45" radius-outer="0.47"
+            material="color: #8a2be2; shader: flat"></a-ring>
+    <a-text value="KISS LAND" position="0 0.02 1.15" rotation="-90 0 0" align="center" width="3.2" color="#ff2a55"></a-text>
+    <a-text value="THE WEEKND" position="0 0.02 1.4" rotation="-90 0 0" align="center" width="2" color="#c9a0ff"></a-text>
+
+    <a-entity id="model" position="0 0 0" scale="1 1 1" rotation="0 0 0">
+      <a-box class="clickable tint" position="0 0.6 0" width="0.5" height="0.6" depth="0.3" material="color: #ff2a55; metalness: .6; roughness: .3"></a-box>
+      <a-box class="clickable" position="0 1.08 0" width="0.36" height="0.34" depth="0.3" material="color: #22002b; metalness: .5"></a-box>
+      <a-sphere class="clickable" position="-0.09 1.1 0.16" radius="0.04" material="color: #fff; shader: flat"></a-sphere>
+      <a-sphere class="clickable" position="0.09 1.1 0.16" radius="0.04" material="color: #fff; shader: flat"></a-sphere>
+
+      <a-cone class="clickable tint" position="-0.12 1.4 0" radius-bottom="0.06" radius-top="0" height="0.3" material="color: #ff2a55"></a-cone>
+      <a-cone class="clickable tint" position="0 1.45 0" radius-bottom="0.07" radius-top="0" height="0.4" material="color: #ff2a55"></a-cone>
+      <a-cone class="clickable tint" position="0.12 1.4 0" radius-bottom="0.06" radius-top="0" height="0.3" material="color: #ff2a55"></a-cone>
+
+      <a-box class="clickable tint" position="-0.36 0.6 0" width="0.14" height="0.5" depth="0.14" material="color: #ff2a55"></a-box>
+      <a-box class="clickable tint" position="0.36 0.6 0" width="0.14" height="0.5" depth="0.14" material="color: #ff2a55"></a-box>
+      <a-box class="clickable" position="-0.13 0.15 0" width="0.17" height="0.3" depth="0.17" material="color: #22002b"></a-box>
+      <a-box class="clickable" position="0.13 0.15 0" width="0.17" height="0.3" depth="0.17" material="color: #22002b"></a-box>
+    </a-entity>
+
+  </a-marker>
+
+  <a-entity camera>
+    <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+  </a-entity>
+  <a-light type="ambient" color="#ffffff" intensity="0.9"></a-light>
+  <a-light type="directional" position="1 3 2" intensity="0.8"></a-light>
+</a-scene>
+
+<div id="ui">
+  <button data-a="left">⬅️</button>
+  <button data-a="right">➡️</button>
+  <button data-a="up">⬆️</button>
+  <button data-a="down">⬇️</button>
+  <button data-a="big">➕ Tamaño</button>
+  <button data-a="small">➖ Tamaño</button>
+  <button data-a="rotL">↺</button>
+  <button data-a="rotR">↻</button>
+  <button data-a="spin">🔄 Girar</button>
+  <button data-a="color">🎨 Color</button>
+  <button data-a="reset">Reset</button>
+</div>
+
+<script>
+  const model  = document.getElementById("model");
+  const marker = document.getElementById("marker");
+  const status = document.getElementById("status");
+
+  const colores = ["#ff2a55", "#8a2be2", "#ff7a00", "#00e5ff", "#ffffff"]; // rojo, morado, naranja, cian, blanco
+  let state = { x: 0, y: 0, z: 0, s: 1, rot: 0, spin: false, c: 0 };
+
+  function aplicar() {
+    model.setAttribute("position", `${state.x} ${state.y} ${state.z}`);   // 3) posición
+    model.setAttribute("scale", `${state.s} ${state.s} ${state.s}`);       // 4) tamaño
+    model.setAttribute("rotation", `0 ${state.rot} 0`);                    // 5) rotación
+  }
+
+  function cambiarColor() {
+    state.c = (state.c + 1) % colores.length;
+    model.querySelectorAll(".tint").forEach(p => p.setAttribute("material", "color", colores[state.c]));
+  }
+
+  const acciones = {
+    left:  () => state.x -= 0.1,
+    right: () => state.x += 0.1,
+    up:    () => state.z -= 0.1,   // alejar
+    down:  () => state.z += 0.1,   // acercar
+    big:   () => state.s = Math.min(state.s + 0.2, 2.5),
+    small: () => state.s = Math.max(state.s - 0.2, 0.3),
+    rotL:  () => state.rot -= 20,
+    rotR:  () => state.rot += 20,
+    spin:  () => state.spin = !state.spin,
+    color: cambiarColor,
+    reset: () => { state = { x: 0, y: 0, z: 0, s: 1, rot: 0, spin: false, c: state.c }; }
+  };
+
+  document.querySelectorAll("#ui button").forEach(b =>
+    b.addEventListener("click", () => { acciones[b.dataset.a](); aplicar(); })
+  );
+
+
+  model.addEventListener("click", () => {
+    cambiarColor();
+    const base = state.s;
+    state.s = base * 1.2; aplicar();
+    setTimeout(() => { state.s = base; aplicar(); }, 250);
+  });
+
+  (function loop() {
+    if (state.spin) { state.rot = (state.rot + 1.5) % 360; aplicar(); }
+    requestAnimationFrame(loop);
+  })();
+
+  marker.addEventListener("markerFound", () => status.textContent = "¡Marcador detectado! Toca el robot 🤖");
+  marker.addEventListener("markerLost",  () => status.textContent = "Apunta la cámara al marcador HIRO 📷");
+</script>
+</body>
+</html>
